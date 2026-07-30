@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>🔥 打卡</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app-container" id="app">
+
+  <!-- ==================== 登录页面 ==================== -->
+  <div class="page-view active" id="page-login">
+    <div class="login-box">
+      <div class="app-logo">🔥</div>
+      <h1>打卡</h1>
+      <p class="subtitle">和小伙伴一起，坚持每天打卡</p>
+      <div class="login-tabs">
+        <button class="login-tab active" data-tab="login">登录</button>
+        <button class="login-tab" data-tab="register">注册</button>
+      </div>
+      <form id="login-form">
+        <div class="input-group">
+          <label>用户名</label>
+          <input class="input-field" type="text" id="login-username" placeholder="输入用户名" required autocomplete="username">
+        </div>
+        <div class="input-group">
+          <label>密码</label>
+          <input class="input-field" type="password" id="login-password" placeholder="输入密码" required autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">登录</button>
+        <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--text-tertiary);">忘记密码请找管理员重置</p>
+      </form>
+      <form id="register-form" style="display:none;">
+        <div class="input-group">
+          <label>用户名</label>
+          <input class="input-field" type="text" id="reg-username" placeholder="设置用户名" required autocomplete="off">
+        </div>
+        <div class="input-group">
+          <label>密码</label>
+          <input class="input-field" type="password" id="reg-password" placeholder="设置密码（至少6位）" required minlength="6" autocomplete="new-password">
+        </div>
+        <button class="btn btn-success btn-block" type="submit">注册</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 日历主页面 ==================== -->
+  <div class="page-view" id="page-calendar">
+    <div class="nav-bar">
+      <span class="title">🔥 打卡</span>
+      <div class="right-actions">
+        <span class="badge badge-fire" id="fire-streak">🔥 0天</span>
+        <button class="btn btn-primary" style="padding:6px 14px;font-size:13px;border-radius:20px;" onclick="showCreateModal()">+</button>
+      </div>
+    </div>
+
+    <!-- 项目标签 -->
+    <div class="project-tags" id="project-tags">
+      <div class="empty-state" style="padding:8px 0;font-size:12px;">暂无项目，点击 + 创建</div>
+    </div>
+
+    <!-- 日历头部 -->
+    <div class="calendar-header">
+      <button class="calendar-nav-btn" onclick="navigateMonth(-1)">&lt;</button>
+      <span class="calendar-month" id="calendar-month">2026年7月</span>
+      <button class="calendar-nav-btn" onclick="navigateMonth(1)">&gt;</button>
+    </div>
+
+    <!-- 星期 -->
+    <div class="weekday-row">
+      <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+    </div>
+
+    <!-- 日历网格 -->
+    <div class="calendar-grid" id="calendar-grid"></div>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-page="calendar">📅<span>日历</span></button>
+      <button class="nav-item" data-page="friends">👥<span>好友</span></button>
+      <button class="nav-item" data-page="chat">💬<span>聊天</span></button>
+      <button class="nav-item" data-page="settings">⚙️<span>设置</span></button>
+    </nav>
+  </div>
+
+  <!-- ==================== 打卡详情页 ==================== -->
+  <div class="page-view" id="page-checkin-detail">
+    <div class="nav-bar">
+      <button class="btn-ghost" onclick="closeDetail()" style="border:none;background:none;font-size:16px;cursor:pointer;">&lt; 返回</button>
+      <span class="title" id="detail-date-title">7月30日</span>
+      <span class="badge badge-blue" id="detail-project-name">项目</span>
+    </div>
+    <div class="page-content" id="checkin-detail-content">
+      <div class="checkin-detail">
+        <div id="detail-media" class="checkin-media-grid"></div>
+        <div id="detail-text" class="checkin-text"></div>
+        <!-- 评论区 -->
+        <div class="comment-section">
+          <div style="font-size:14px;font-weight:600;margin-bottom:8px;">💬 评论</div>
+          <div id="detail-comments"></div>
+          <div class="comment-input">
+            <input type="text" id="comment-input" placeholder="写评论..." onkeydown="if(event.key==='Enter') submitComment()">
+            <button class="btn btn-primary" style="padding:6px 12px;border-radius:var(--radius-xl);" onclick="submitComment()">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 好友列表页 ==================== -->
+  <div class="page-view" id="page-friends">
+    <div class="nav-bar">
+      <span class="title">👥 好友</span>
+      <button class="btn-ghost" onclick="showAddFriendModal()" style="border:none;background:var(--accent-blue);color:white;padding:6px 14px;border-radius:20px;font-size:13px;">+ 添加</button>
+    </div>
+    <div class="page-content" id="friends-list">
+      <div class="list-group" style="margin:12px 16px;" id="friends-list-inner">
+        <div class="empty-state">暂无好友，点击右上角添加</div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" data-page="calendar">📅<span>日历</span></button>
+      <button class="nav-item active" data-page="friends">👥<span>好友</span></button>
+      <button class="nav-item" data-page="chat">💬<span>聊天</span></button>
+      <button class="nav-item" data-page="settings">⚙️<span>设置</span></button>
+    </nav>
+  </div>
+
+  <!-- ==================== 聊天页面 ==================== -->
+  <div class="page-view" id="page-chat">
+    <div class="chat-layout" style="height:100%;">
+      <div class="friend-list" id="chat-friend-list">
+        <div style="padding:12px;text-align:center;font-size:11px;color:var(--text-tertiary);">选择好友<br>开始聊天</div>
+      </div>
+      <div class="chat-area" id="chat-area">
+        <div class="nav-bar" style="position:static;">
+          <span class="title" id="chat-with-name">💬 聊天</span>
+        </div>
+        <div class="messages-area" id="messages-area">
+          <div class="empty-state" style="padding:60px 20px;">选择一个好友开始聊天</div>
+        </div>
+        <div class="chat-input-area" id="chat-input-area" style="display:none;">
+          <input type="text" id="chat-input" placeholder="输入消息..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+          <button class="chat-btn" id="chat-voice-btn" onclick="recordVoiceChat()">🎤</button>
+          <button class="chat-btn" onclick="sendChatPhoto()">📷</button>
+          <button class="chat-btn send-btn" onclick="sendChatMessage()">↑</button>
+        </div>
+      </div>
+    </div>
+    <nav class="bottom-nav" style="display:none;" id="chat-bottom-nav">
+      <button class="nav-item" data-page="calendar">📅<span>日历</span></button>
+      <button class="nav-item" data-page="friends">👥<span>好友</span></button>
+      <button class="nav-item active" data-page="chat">💬<span>聊天</span></button>
+      <button class="nav-item" data-page="settings">⚙️<span>设置</span></button>
+    </nav>
+  </div>
+
+  <!-- ==================== 设置页面 ==================== -->
+  <div class="page-view" id="page-settings">
+    <div class="nav-bar">
+      <span class="title">⚙️ 设置</span>
+      <button class="btn-ghost" onclick="logout()" style="border:none;background:none;color:var(--accent-red);font-size:14px;cursor:pointer;">退出</button>
+    </div>
+    <div class="page-content">
+      <!-- 主题 -->
+      <div class="settings-section">
+        <div class="list-group">
+          <div class="list-item">
+            <span class="label">🌗 外观</span>
+            <select id="theme-select" style="border:none;background:transparent;font-size:14px;color:var(--text-primary);outline:none;" onchange="setTheme(this.value)">
+              <option value="light">浅色</option>
+              <option value="dark">深色</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Server酱 -->
+      <div class="settings-section">
+        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">🔔 微信提醒（缺勤通知）</div>
+        <div class="list-group">
+          <div class="list-item">
+            <span class="label">Server酱 SendKey</span>
+            <input type="text" id="serverchan-key" placeholder="填写 SendKey" style="border:0.5px solid var(--border-color);background:var(--bg-secondary);padding:6px 10px;border-radius:var(--radius-sm);font-size:13px;width:140px;text-align:right;color:var(--text-primary);outline:none;">
+          </div>
+          <div class="list-item" onclick="showServerchanGuide()" style="cursor:pointer;">
+            <span style="font-size:12px;color:var(--accent-blue);">如何获取 SendKey？</span>
+            <span style="margin-left:auto;">&gt;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin 入口 - 仅Admin可见 -->
+      <div class="settings-section" id="admin-entry" style="display:none;">
+        <div class="list-group">
+          <div class="list-item" onclick="showAdminPage()">
+            <span class="label">🔐 管理后台</span>
+            <span style="margin-left:auto;color:var(--text-tertiary);">&gt;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" data-page="calendar">📅<span>日历</span></button>
+      <button class="nav-item" data-page="friends">👥<span>好友</span></button>
+      <button class="nav-item" data-page="chat">💬<span>聊天</span></button>
+      <button class="nav-item active" data-page="settings">⚙️<span>设置</span></button>
+    </nav>
+  </div>
+
+  <!-- ==================== Admin 后台 ==================== -->
+  <div class="page-view" id="page-admin">
+    <div class="nav-bar">
+      <button class="btn-ghost" onclick="showPage('settings')" style="border:none;background:none;font-size:16px;cursor:pointer;">&lt; 返回</button>
+      <span class="title">🔐 管理后台</span>
+      <span></span>
+    </div>
+    <div class="page-content">
+      <div class="admin-stats" id="admin-stats"></div>
+      <div style="padding:0 16px;">
+        <input class="input-field" type="text" placeholder="搜索用户名..." style="margin-bottom:8px;" oninput="filterAdminUsers(this.value)">
+        <div class="list-group" id="admin-user-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Admin 用户详情浮层 ==================== -->
+  <div class="admin-detail-panel" id="admin-detail-panel">
+    <div class="nav-bar">
+      <button class="btn-ghost" onclick="closeAdminDetail()" style="border:none;background:none;font-size:16px;cursor:pointer;">&lt; 返回</button>
+      <span class="title" id="admin-detail-title">用户打卡</span>
+      <span></span>
+    </div>
+    <div class="page-content" id="admin-detail-content"></div>
+  </div>
+
+  <!-- ==================== 创建打卡项目弹窗 ==================== -->
+  <div class="modal-overlay" id="create-modal">
+    <div class="modal-content">
+      <div class="modal-title">📋 新建打卡项目</div>
+
+      <div class="input-group">
+        <label>项目名称</label>
+        <input class="input-field" id="project-name" placeholder="例如：每天喝水">
+      </div>
+
+      <div class="input-group">
+        <label>项目颜色</label>
+        <div style="display:flex;gap:8px;" id="color-picker">
+          <div class="color-option selected" data-color="#007aff" style="width:30px;height:30px;border-radius:8px;background:#007aff;cursor:pointer;border:2px solid transparent;"></div>
+          <div class="color-option" data-color="#ff9500" style="width:30px;height:30px;border-radius:8px;background:#ff9500;cursor:pointer;"></div>
+          <div class="color-option" data-color="#34c759" style="width:30px;height:30px;border-radius:8px;background:#34c759;cursor:pointer;"></div>
+          <div class="color-option" data-color="#af52de" style="width:30px;height:30px;border-radius:8px;background:#af52de;cursor:pointer;"></div>
+          <div class="color-option" data-color="#ff3b30" style="width:30px;height:30px;border-radius:8px;background:#ff3b30;cursor:pointer;"></div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>创建方式</label>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" id="create-mode-self" style="flex:1;background:var(--accent-blue);color:white;" onclick="setCreateMode('self')">为自己创建</button>
+          <button class="btn" id="create-mode-other" style="flex:1;background:var(--bg-secondary);color:var(--text-tertiary);" onclick="setCreateMode('other')">代创建</button>
+        </div>
+      </div>
+
+      <!-- 代创建选项 -->
+      <div id="create-other-options" style="display:none;">
+        <div class="input-group">
+          <label>选择好友（可多选）</label>
+          <div class="select-list" id="create-friend-select"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+          <input type="checkbox" id="also-participate" style="width:18px;height:18px;">
+          <label for="also-participate" style="font-size:13px;">我也参与打卡</label>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>每日打卡要求</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="input-field" type="number" id="daily-count" value="1" min="0" style="width:60px;text-align:center;">
+          <select id="daily-type" style="border:0.5px solid var(--border-color);background:var(--bg-secondary);padding:10px;border-radius:var(--radius-md);font-size:14px;color:var(--text-primary);outline:none;">
+            <option value="photo">张照片</option>
+            <option value="video">段视频</option>
+            <option value="audio">条语音</option>
+            <option value="text">条文字</option>
+            <option value="none">纯签到（无需多媒体）</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn" style="flex:1;background:var(--bg-secondary);color:var(--text-secondary);" onclick="closeCreateModal()">取消</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="createProject()">创建项目</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 今日打卡上传弹窗 ==================== -->
+  <div class="modal-overlay" id="checkin-modal">
+    <div class="modal-content">
+      <div class="modal-title" id="checkin-modal-title">📸 今日打卡</div>
+      <div class="input-group">
+        <label>选择项目</label>
+        <select id="checkin-project-select" style="border:0.5px solid var(--border-color);background:var(--bg-secondary);padding:10px;border-radius:var(--radius-md);font-size:14px;width:100%;outline:none;color:var(--text-primary);"></select>
+      </div>
+      <div id="checkin-media-grid" class="upload-grid">
+        <div class="upload-item" onclick="uploadCheckinMedia('photo')">📷</div>
+        <div class="upload-item" onclick="uploadCheckinMedia('video')">🎬</div>
+        <div class="upload-item" onclick="uploadCheckinMedia('audio')">🎤</div>
+      </div>
+      <div class="input-group">
+        <label>文字记录（可选）</label>
+        <textarea class="input-field" id="checkin-text" rows="3" placeholder="写点什么..." style="resize:none;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" style="flex:1;background:var(--bg-secondary);color:var(--text-secondary);" onclick="closeCheckinModal()">取消</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="submitCheckin()">提交打卡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 添加好友弹窗 ==================== -->
+  <div class="modal-overlay" id="add-friend-modal">
+    <div class="modal-content">
+      <div class="modal-title">👥 添加好友</div>
+      <div class="input-group">
+        <label>输入对方的用户名</label>
+        <input class="input-field" id="friend-username" placeholder="对方的用户名">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" style="flex:1;background:var(--bg-secondary);color:var(--text-secondary);" onclick="closeAddFriendModal()">取消</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="sendFriendRequest()">发送申请</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Server酱指引弹窗 ==================== -->
+  <div class="modal-overlay" id="serverchan-guide-modal">
+    <div class="modal-content">
+      <div class="modal-title">🔔 设置微信提醒</div>
+      <div class="serverchan-guide">
+        <ol>
+          <li>打开 <a href="https://sct.ftqq.com" target="_blank" style="color:var(--accent-blue);">sct.ftqq.com</a></li>
+          <li>用微信扫描二维码并关注公众号</li>
+          <li>登录后复制你的 <b>SendKey</b></li>
+          <li>回到本页设置中粘贴保存</li>
+        </ol>
+      </div>
+      <div class="input-group">
+        <label>SendKey</label>
+        <input class="input-field" id="serverchan-key-guide" placeholder="粘贴 SendKey">
+      </div>
+      <button class="btn btn-primary btn-block" onclick="saveServerchanKey()">保存</button>
+    </div>
+  </div>
+
+  <!-- ==================== 文件输入（隐藏） ==================== -->
+  <input type="file" id="file-input" accept="image/*,video/*,audio/*" multiple style="display:none;" onchange="handleFileSelect(event)">
+
+</div>
+
+<!-- Supabase SDK -->
+<script src="js/supabase.min.js"></script>
+
+<!-- API 层 (通过 Vercel 代理连接 Supabase) -->
+<script src="js/api.js"></script>
+
+<!-- 应用脚本 -->
+<script src="js/calendar.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

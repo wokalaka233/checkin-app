@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/proxy" }
+  ],
+  "buildCommand": "echo 'static site'",
+  "outputDirectory": "."
+}

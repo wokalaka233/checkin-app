@@ -1,0 +1,9 @@
+node_modules/
+package.json
+package-lock.json
+database.db
+*.pyc
+__pycache__/
+uploads/
+*.log
+.DS_Store
