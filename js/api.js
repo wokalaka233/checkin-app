@@ -1,21 +1,20 @@
 /* ============================================
-   打卡网站 - API 层
-   Supabase SDK 通过 Vercel 代理访问
+   鎵撳崱缃戠珯 - API 灞?   Supabase SDK 閫氳繃 Vercel 浠ｇ悊璁块棶
    ============================================ */
 
 const SUPA_URL = '/api';
 const SUPA_KEY = 'sb_publishable_xi-u5divr9AoQHLL_G9eaw_4dWotEY9';
 
-const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+const client = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
 
 // ==========================================
-// 认证
+// 璁よ瘉
 // ==========================================
 
 async function registerUser(username, password) {
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await client.auth.signUp({
     email: `${username}@local.habit.app`,
     password: password,
     options: { data: { username, is_admin: false } }
@@ -25,7 +24,7 @@ async function registerUser(username, password) {
 }
 
 async function loginUser(username, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await client.auth.signInWithPassword({
     email: `${username}@local.habit.app`,
     password: password
   });
@@ -34,27 +33,27 @@ async function loginUser(username, password) {
 }
 
 async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await client.auth.getUser();
   return user;
 }
 
 async function getUserProfile(userId) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('profiles').select('*').eq('id', userId).single();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
 
 async function logoutUser() {
-  await supabase.auth.signOut();
+  await client.auth.signOut();
 }
 
 // ==========================================
-// 项目
+// 椤圭洰
 // ==========================================
 
 async function getMyProjects(userId) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('project_members')
     .select('project_id, projects(*)')
     .eq('user_id', userId);
@@ -63,7 +62,7 @@ async function getMyProjects(userId) {
 }
 
 async function createProject(name, color, creatorId, dailyCount, dailyType, members, creatorParticipates) {
-  const { data: project, error } = await supabase
+  const { data: project, error } = await client
     .from('projects')
     .insert({ name, color, created_by: creatorId, daily_count: dailyCount, daily_type: dailyType })
     .select().single();
@@ -71,33 +70,33 @@ async function createProject(name, color, creatorId, dailyCount, dailyType, memb
 
   const inserts = members.map(uid => ({ project_id: project.id, user_id: uid }));
   if (creatorParticipates) inserts.push({ project_id: project.id, user_id: creatorId });
-  const { error: memErr } = await supabase.from('project_members').insert(inserts);
+  const { error: memErr } = await client.from('project_members').insert(inserts);
   if (memErr) throw memErr;
 
   return project;
 }
 
 async function getProjectMembers(projectId) {
-  const { data } = await supabase.from('project_members')
+  const { data } = await client.from('project_members')
     .select('user_id, profiles(username)').eq('project_id', projectId);
   return data || [];
 }
 
 async function removeProjectMember(projectId, userId) {
-  await supabase.from('project_members').delete().eq('project_id', projectId).eq('user_id', userId);
+  await client.from('project_members').delete().eq('project_id', projectId).eq('user_id', userId);
 }
 
 async function updateProjectDaily(projectId, dailyCount, dailyType) {
-  await supabase.from('projects').update({ daily_count: dailyCount, daily_type: dailyType }).eq('id', projectId);
+  await client.from('projects').update({ daily_count: dailyCount, daily_type: dailyType }).eq('id', projectId);
 }
 
 // ==========================================
-// 打卡
+// 鎵撳崱
 // ==========================================
 
 async function submitCheckinData(projectId, userId, text, mediaUrls) {
   const today = new Date().toISOString().split('T')[0];
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('checkins')
     .insert({ project_id: projectId, user_id: userId, checkin_date: today, text, media_urls: mediaUrls || [] })
     .select().single();
@@ -106,7 +105,7 @@ async function submitCheckinData(projectId, userId, text, mediaUrls) {
 }
 
 async function getCheckinsForDate(projectId, date) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('checkins').select('*, profiles(username)')
     .eq('project_id', projectId).eq('checkin_date', date);
   if (error) throw error;
@@ -116,7 +115,7 @@ async function getCheckinsForDate(projectId, date) {
 async function getCheckinsForMonth(projectId, year, month) {
   const start = `${year}-${String(month).padStart(2,'0')}-01`;
   const end = `${year}-${String(month).padStart(2,'0')}-31`;
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('checkins').select('*')
     .eq('project_id', projectId).gte('checkin_date', start).lte('checkin_date', end);
   if (error) throw error;
@@ -126,7 +125,7 @@ async function getCheckinsForMonth(projectId, year, month) {
 async function getUserCheckinsForMonth(userId, year, month) {
   const start = `${year}-${String(month).padStart(2,'0')}-01`;
   const end = `${year}-${String(month).padStart(2,'0')}-31`;
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('checkins').select('*, projects(name, color)')
     .eq('user_id', userId).gte('checkin_date', start).lte('checkin_date', end);
   if (error) throw error;
@@ -134,11 +133,11 @@ async function getUserCheckinsForMonth(userId, year, month) {
 }
 
 // ==========================================
-// 评论
+// 璇勮
 // ==========================================
 
 async function addComment(checkinId, userId, text) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('comments').insert({ checkin_id: checkinId, user_id: userId, text })
     .select('*, profiles(username)').single();
   if (error) throw error;
@@ -146,7 +145,7 @@ async function addComment(checkinId, userId, text) {
 }
 
 async function getComments(checkinId) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('comments').select('*, profiles(username)')
     .eq('checkin_id', checkinId).order('created_at');
   if (error) throw error;
@@ -154,22 +153,22 @@ async function getComments(checkinId) {
 }
 
 // ==========================================
-// 好友
+// 濂藉弸
 // ==========================================
 
 async function sendFriendRequest(fromUserId, toUsername) {
-  const { data: target } = await supabase.from('profiles').select('id').eq('username', toUsername).single();
-  if (!target) throw new Error('用户不存在');
+  const { data: target } = await client.from('profiles').select('id').eq('username', toUsername).single();
+  if (!target) throw new Error('鐢ㄦ埛涓嶅瓨鍦?);
 
-  const { data: existing } = await supabase.from('friends').select('*')
+  const { data: existing } = await client.from('friends').select('*')
     .or(`and(user_id.eq.${fromUserId},friend_id.eq.${target.id}),and(user_id.eq.${target.id},friend_id.eq.${fromUserId})`).single();
-  if (existing) throw new Error('已经是好友');
+  if (existing) throw new Error('宸茬粡鏄ソ鍙?);
 
-  await supabase.from('friends').insert({ user_id: fromUserId, friend_id: target.id, status: 'pending' });
+  await client.from('friends').insert({ user_id: fromUserId, friend_id: target.id, status: 'pending' });
 }
 
 async function getFriendRequests(userId) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('friends').select('*, profiles!friends_user_id_fkey(username)')
     .eq('friend_id', userId).eq('status', 'pending');
   if (error) throw error;
@@ -177,11 +176,11 @@ async function getFriendRequests(userId) {
 }
 
 async function acceptFriendRequest(requestId) {
-  await supabase.from('friends').update({ status: 'accepted' }).eq('id', requestId);
+  await client.from('friends').update({ status: 'accepted' }).eq('id', requestId);
 }
 
 async function getFriends(userId) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('friends').select('id, user_id, friend_id, profiles!friends_user_id_fkey(username), friend:profiles!friends_friend_id_fkey(username)')
     .or(`and(user_id.eq.${userId},status.eq.accepted),and(friend_id.eq.${userId},status.eq.accepted)`);
   if (error) throw error;
@@ -192,15 +191,15 @@ async function getFriends(userId) {
 }
 
 // ==========================================
-// 聊天
+// 鑱婂ぉ
 // ==========================================
 
 async function sendMessage(fromUserId, toUserId, type, content) {
-  await supabase.from('messages').insert({ from_user_id: fromUserId, to_user_id: toUserId, type, content });
+  await client.from('messages').insert({ from_user_id: fromUserId, to_user_id: toUserId, type, content });
 }
 
 async function getMessages(userId, otherUserId) {
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('messages').select('*')
     .or(`and(from_user_id.eq.${userId},to_user_id.eq.${otherUserId}),and(from_user_id.eq.${otherUserId},to_user_id.eq.${userId})`)
     .order('created_at').limit(100);
@@ -209,39 +208,38 @@ async function getMessages(userId, otherUserId) {
 }
 
 // ==========================================
-// 文件上传
+// 鏂囦欢涓婁紶
 // ==========================================
 
 async function uploadFile(bucket, folder, file) {
   const ext = file.name.split('.').pop();
   const name = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-  const { data, error } = await supabase.storage.from(bucket).upload(name, file);
+  const { data, error } = await client.storage.from(bucket).upload(name, file);
   if (error) throw error;
-  const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(name);
+  const { data: { publicUrl } } = client.storage.from(bucket).getPublicUrl(name);
   return publicUrl;
 }
 
 // ==========================================
-// 管理员
-// ==========================================
+// 绠＄悊鍛?// ==========================================
 
 async function getAllUsers() {
-  const { data } = await supabase.from('profiles').select('*').order('created_at');
+  const { data } = await client.from('profiles').select('*').order('created_at');
   return data || [];
 }
 
 async function resetUserPassword(userId, newPassword) {
-  await supabase.from('profiles').update({ temp_password: newPassword }).eq('id', userId);
+  await client.from('profiles').update({ temp_password: newPassword }).eq('id', userId);
 }
 
 async function getCheckinsByUser(userId, date) {
-  const { data } = await supabase.from('checkins').select('*, projects(name, color)')
+  const { data } = await client.from('checkins').select('*, projects(name, color)')
     .eq('user_id', userId).eq('checkin_date', date);
   return data || [];
 }
 
 // ==========================================
-// 工具
+// 宸ュ叿
 // ==========================================
 
 function calcStreak(dates, currentDate) {
@@ -257,7 +255,7 @@ function calcStreak(dates, currentDate) {
   return streak;
 }
 
-// 挂载到 window
+// 鎸傝浇鍒?window
 window.registerUser = registerUser;
 window.loginUser = loginUser;
 window.getCurrentUser = getCurrentUser;
