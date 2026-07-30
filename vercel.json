@@ -1,5 +1,9 @@
 {
   "version": 2,
+  "regions": ["hnd1"],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/proxy" }
+  ],
   "buildCommand": "echo 'static site'",
   "outputDirectory": "."
 }
