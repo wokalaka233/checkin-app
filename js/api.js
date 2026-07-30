@@ -1,7 +1,7 @@
 /* Habit Tracker - API Layer
-   Supabase SDK direct connection */
+   Supabase SDK via Vercel proxy (Tokyo region) */
 
-const SUPA_URL = 'https://vqalxycphakttybffwz.supabase.co';
+const SUPA_URL = '/api';
 const SUPA_KEY = 'sb_publishable_xi-u5divr9AoQHLL_G9eaw_4dWotEY9';
 
 var db = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
