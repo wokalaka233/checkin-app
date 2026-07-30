@@ -1,7 +1,7 @@
 /* Habit Tracker - API Layer
-   Supabase SDK via Vercel proxy (Tokyo region) */
+   Supabase SDK via Tencent Cloud SCF proxy */
 
-const SUPA_URL = '/api';
+const SUPA_URL = 'https://1461105845-iim8nclwca.ap-shanghai.tencentcs.com';
 const SUPA_KEY = 'sb_publishable_xi-u5divr9AoQHLL_G9eaw_4dWotEY9';
 
 var db = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
