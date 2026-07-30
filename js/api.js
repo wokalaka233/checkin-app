@@ -1,6 +1,5 @@
-/* ============================================
-   鎵撳崱缃戠珯 - API 灞?   Supabase SDK 閫氳繃 Vercel 浠ｇ悊璁块棶
-   ============================================ */
+/* Habit Tracker - API Layer
+   Supabase SDK via Vercel proxy */
 
 const SUPA_URL = '/api';
 const SUPA_KEY = 'sb_publishable_xi-u5divr9AoQHLL_G9eaw_4dWotEY9';
@@ -9,13 +8,9 @@ const client = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
 
-// ==========================================
-// 璁よ瘉
-// ==========================================
-
 async function registerUser(username, password) {
   const { data, error } = await client.auth.signUp({
-    email: `${username}@local.habit.app`,
+    email: username + '@local.habit.app',
     password: password,
     options: { data: { username, is_admin: false } }
   });
@@ -25,7 +20,7 @@ async function registerUser(username, password) {
 
 async function loginUser(username, password) {
   const { data, error } = await client.auth.signInWithPassword({
-    email: `${username}@local.habit.app`,
+    email: username + '@local.habit.app',
     password: password
   });
   if (error) throw error;
@@ -48,10 +43,6 @@ async function logoutUser() {
   await client.auth.signOut();
 }
 
-// ==========================================
-// 椤圭洰
-// ==========================================
-
 async function getMyProjects(userId) {
   const { data, error } = await client
     .from('project_members')
@@ -67,12 +58,10 @@ async function createProject(name, color, creatorId, dailyCount, dailyType, memb
     .insert({ name, color, created_by: creatorId, daily_count: dailyCount, daily_type: dailyType })
     .select().single();
   if (error) throw error;
-
   const inserts = members.map(uid => ({ project_id: project.id, user_id: uid }));
   if (creatorParticipates) inserts.push({ project_id: project.id, user_id: creatorId });
   const { error: memErr } = await client.from('project_members').insert(inserts);
   if (memErr) throw memErr;
-
   return project;
 }
 
@@ -89,10 +78,6 @@ async function removeProjectMember(projectId, userId) {
 async function updateProjectDaily(projectId, dailyCount, dailyType) {
   await client.from('projects').update({ daily_count: dailyCount, daily_type: dailyType }).eq('id', projectId);
 }
-
-// ==========================================
-// 鎵撳崱
-// ==========================================
 
 async function submitCheckinData(projectId, userId, text, mediaUrls) {
   const today = new Date().toISOString().split('T')[0];
@@ -113,8 +98,8 @@ async function getCheckinsForDate(projectId, date) {
 }
 
 async function getCheckinsForMonth(projectId, year, month) {
-  const start = `${year}-${String(month).padStart(2,'0')}-01`;
-  const end = `${year}-${String(month).padStart(2,'0')}-31`;
+  const start = year + '-' + String(month).padStart(2,'0') + '-01';
+  const end = year + '-' + String(month).padStart(2,'0') + '-31';
   const { data, error } = await client
     .from('checkins').select('*')
     .eq('project_id', projectId).gte('checkin_date', start).lte('checkin_date', end);
@@ -123,18 +108,14 @@ async function getCheckinsForMonth(projectId, year, month) {
 }
 
 async function getUserCheckinsForMonth(userId, year, month) {
-  const start = `${year}-${String(month).padStart(2,'0')}-01`;
-  const end = `${year}-${String(month).padStart(2,'0')}-31`;
+  const start = year + '-' + String(month).padStart(2,'0') + '-01';
+  const end = year + '-' + String(month).padStart(2,'0') + '-31';
   const { data, error } = await client
     .from('checkins').select('*, projects(name, color)')
     .eq('user_id', userId).gte('checkin_date', start).lte('checkin_date', end);
   if (error) throw error;
   return data || [];
 }
-
-// ==========================================
-// 璇勮
-// ==========================================
 
 async function addComment(checkinId, userId, text) {
   const { data, error } = await client
@@ -152,18 +133,12 @@ async function getComments(checkinId) {
   return data || [];
 }
 
-// ==========================================
-// 濂藉弸
-// ==========================================
-
 async function sendFriendRequest(fromUserId, toUsername) {
   const { data: target } = await client.from('profiles').select('id').eq('username', toUsername).single();
-  if (!target) throw new Error('鐢ㄦ埛涓嶅瓨鍦?);
-
+  if (!target) throw new Error('User not found');
   const { data: existing } = await client.from('friends').select('*')
-    .or(`and(user_id.eq.${fromUserId},friend_id.eq.${target.id}),and(user_id.eq.${target.id},friend_id.eq.${fromUserId})`).single();
-  if (existing) throw new Error('宸茬粡鏄ソ鍙?);
-
+    .or('and(user_id.eq.' + fromUserId + ',friend_id.eq.' + target.id + '),and(user_id.eq.' + target.id + ',friend_id.eq.' + fromUserId + ')').single();
+  if (existing) throw new Error('Already friends');
   await client.from('friends').insert({ user_id: fromUserId, friend_id: target.id, status: 'pending' });
 }
 
@@ -182,17 +157,13 @@ async function acceptFriendRequest(requestId) {
 async function getFriends(userId) {
   const { data, error } = await client
     .from('friends').select('id, user_id, friend_id, profiles!friends_user_id_fkey(username), friend:profiles!friends_friend_id_fkey(username)')
-    .or(`and(user_id.eq.${userId},status.eq.accepted),and(friend_id.eq.${userId},status.eq.accepted)`);
+    .or('and(user_id.eq.' + userId + ',status.eq.accepted),and(friend_id.eq.' + userId + ',status.eq.accepted)');
   if (error) throw error;
   return (data || []).map(f => ({
     friendId: f.user_id === userId ? f.friend_id : f.user_id,
     username: f.user_id === userId ? f.friend.username : f.profiles.username
   }));
 }
-
-// ==========================================
-// 鑱婂ぉ
-// ==========================================
 
 async function sendMessage(fromUserId, toUserId, type, content) {
   await client.from('messages').insert({ from_user_id: fromUserId, to_user_id: toUserId, type, content });
@@ -201,27 +172,20 @@ async function sendMessage(fromUserId, toUserId, type, content) {
 async function getMessages(userId, otherUserId) {
   const { data, error } = await client
     .from('messages').select('*')
-    .or(`and(from_user_id.eq.${userId},to_user_id.eq.${otherUserId}),and(from_user_id.eq.${otherUserId},to_user_id.eq.${userId})`)
+    .or('and(from_user_id.eq.' + userId + ',to_user_id.eq.' + otherUserId + '),and(from_user_id.eq.' + otherUserId + ',to_user_id.eq.' + userId + ')')
     .order('created_at').limit(100);
   if (error) throw error;
   return data || [];
 }
 
-// ==========================================
-// 鏂囦欢涓婁紶
-// ==========================================
-
 async function uploadFile(bucket, folder, file) {
   const ext = file.name.split('.').pop();
-  const name = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const name = folder + '/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
   const { data, error } = await client.storage.from(bucket).upload(name, file);
   if (error) throw error;
   const { data: { publicUrl } } = client.storage.from(bucket).getPublicUrl(name);
   return publicUrl;
 }
-
-// ==========================================
-// 绠＄悊鍛?// ==========================================
 
 async function getAllUsers() {
   const { data } = await client.from('profiles').select('*').order('created_at');
@@ -238,10 +202,6 @@ async function getCheckinsByUser(userId, date) {
   return data || [];
 }
 
-// ==========================================
-// 宸ュ叿
-// ==========================================
-
 function calcStreak(dates, currentDate) {
   const arr = [...new Set(dates.map(d => typeof d === 'string' ? d : d.checkin_date))].sort().reverse();
   let streak = 0;
@@ -255,7 +215,6 @@ function calcStreak(dates, currentDate) {
   return streak;
 }
 
-// 鎸傝浇鍒?window
 window.registerUser = registerUser;
 window.loginUser = loginUser;
 window.getCurrentUser = getCurrentUser;
