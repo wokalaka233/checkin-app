@@ -1,7 +1,7 @@
 /* Habit Tracker - API Layer
-   Supabase SDK via Vercel proxy */
+   Supabase SDK direct connection */
 
-const SUPA_URL = '/api';
+const SUPA_URL = 'https://vqalxycphakttybffwz.supabase.co';
 const SUPA_KEY = 'sb_publishable_xi-u5divr9AoQHLL_G9eaw_4dWotEY9';
 
 var db = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
@@ -33,21 +33,28 @@ async function getCurrentUser() {
 }
 
 async function getUserProfile(userId) {
-  const { data, error } = await db.from('profiles').select('*').eq('id', userId).single();
+  const { data, error } = await db
+    .from('profiles').select('*').eq('id', userId).single();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
 
-async function logoutUser() { await db.auth.signOut(); }
+async function logoutUser() {
+  await db.auth.signOut();
+}
 
 async function getMyProjects(userId) {
-  const { data, error } = await db.from('project_members').select('project_id, projects(*)').eq('user_id', userId);
+  const { data, error } = await db
+    .from('project_members')
+    .select('project_id, projects(*)')
+    .eq('user_id', userId);
   if (error) throw error;
   return data.map(d => d.projects).filter(Boolean);
 }
 
 async function createProject(name, color, creatorId, dailyCount, dailyType, members, creatorParticipates) {
-  const { data: project, error } = await db.from('projects')
+  const { data: project, error } = await db
+    .from('projects')
     .insert({ name, color, created_by: creatorId, daily_count: dailyCount, daily_type: dailyType })
     .select().single();
   if (error) throw error;
@@ -59,7 +66,8 @@ async function createProject(name, color, creatorId, dailyCount, dailyType, memb
 }
 
 async function getProjectMembers(projectId) {
-  const { data } = await db.from('project_members').select('user_id, profiles(username)').eq('project_id', projectId);
+  const { data } = await db.from('project_members')
+    .select('user_id, profiles(username)').eq('project_id', projectId);
   return data || [];
 }
 
@@ -73,7 +81,8 @@ async function updateProjectDaily(projectId, dailyCount, dailyType) {
 
 async function submitCheckinData(projectId, userId, text, mediaUrls) {
   const today = new Date().toISOString().split('T')[0];
-  const { data, error } = await db.from('checkins')
+  const { data, error } = await db
+    .from('checkins')
     .insert({ project_id: projectId, user_id: userId, checkin_date: today, text, media_urls: mediaUrls || [] })
     .select().single();
   if (error) throw error;
@@ -81,7 +90,8 @@ async function submitCheckinData(projectId, userId, text, mediaUrls) {
 }
 
 async function getCheckinsForDate(projectId, date) {
-  const { data, error } = await db.from('checkins').select('*, profiles(username)')
+  const { data, error } = await db
+    .from('checkins').select('*, profiles(username)')
     .eq('project_id', projectId).eq('checkin_date', date);
   if (error) throw error;
   return data || [];
@@ -90,7 +100,8 @@ async function getCheckinsForDate(projectId, date) {
 async function getCheckinsForMonth(projectId, year, month) {
   const start = year + '-' + String(month).padStart(2,'0') + '-01';
   const end = year + '-' + String(month).padStart(2,'0') + '-31';
-  const { data, error } = await db.from('checkins').select('*')
+  const { data, error } = await db
+    .from('checkins').select('*')
     .eq('project_id', projectId).gte('checkin_date', start).lte('checkin_date', end);
   if (error) throw error;
   return data || [];
@@ -99,21 +110,24 @@ async function getCheckinsForMonth(projectId, year, month) {
 async function getUserCheckinsForMonth(userId, year, month) {
   const start = year + '-' + String(month).padStart(2,'0') + '-01';
   const end = year + '-' + String(month).padStart(2,'0') + '-31';
-  const { data, error } = await db.from('checkins').select('*, projects(name, color)')
+  const { data, error } = await db
+    .from('checkins').select('*, projects(name, color)')
     .eq('user_id', userId).gte('checkin_date', start).lte('checkin_date', end);
   if (error) throw error;
   return data || [];
 }
 
 async function addComment(checkinId, userId, text) {
-  const { data, error } = await db.from('comments').insert({ checkin_id: checkinId, user_id: userId, text })
+  const { data, error } = await db
+    .from('comments').insert({ checkin_id: checkinId, user_id: userId, text })
     .select('*, profiles(username)').single();
   if (error) throw error;
   return data;
 }
 
 async function getComments(checkinId) {
-  const { data, error } = await db.from('comments').select('*, profiles(username)')
+  const { data, error } = await db
+    .from('comments').select('*, profiles(username)')
     .eq('checkin_id', checkinId).order('created_at');
   if (error) throw error;
   return data || [];
@@ -129,7 +143,8 @@ async function sendFriendRequest(fromUserId, toUsername) {
 }
 
 async function getFriendRequests(userId) {
-  const { data, error } = await db.from('friends').select('*, profiles!friends_user_id_fkey(username)')
+  const { data, error } = await db
+    .from('friends').select('*, profiles!friends_user_id_fkey(username)')
     .eq('friend_id', userId).eq('status', 'pending');
   if (error) throw error;
   return data || [];
@@ -140,8 +155,8 @@ async function acceptFriendRequest(requestId) {
 }
 
 async function getFriends(userId) {
-  const { data, error } = await db.from('friends')
-    .select('id, user_id, friend_id, profiles!friends_user_id_fkey(username), friend:profiles!friends_friend_id_fkey(username)')
+  const { data, error } = await db
+    .from('friends').select('id, user_id, friend_id, profiles!friends_user_id_fkey(username), friend:profiles!friends_friend_id_fkey(username)')
     .or('and(user_id.eq.' + userId + ',status.eq.accepted),and(friend_id.eq.' + userId + ',status.eq.accepted)');
   if (error) throw error;
   return (data || []).map(f => ({
@@ -155,7 +170,8 @@ async function sendMessage(fromUserId, toUserId, type, content) {
 }
 
 async function getMessages(userId, otherUserId) {
-  const { data, error } = await db.from('messages').select('*')
+  const { data, error } = await db
+    .from('messages').select('*')
     .or('and(from_user_id.eq.' + userId + ',to_user_id.eq.' + otherUserId + '),and(from_user_id.eq.' + otherUserId + ',to_user_id.eq.' + userId + ')')
     .order('created_at').limit(100);
   if (error) throw error;
