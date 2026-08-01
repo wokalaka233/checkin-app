@@ -8,9 +8,15 @@ var db = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
 
+function emailFromUsername(username) {
+  // Supabase 不允许 email local part 包含下划线，替换为点
+  const local = String(username).toLowerCase().replace(/[^a-z0-9]/g, '.');
+  return local + '@example.com';
+}
+
 async function registerUser(username, password) {
   const { data, error } = await db.auth.signUp({
-    email: username + '@local.habit.app',
+    email: emailFromUsername(username),
     password: password,
     options: { data: { username, is_admin: false } }
   });
@@ -20,7 +26,7 @@ async function registerUser(username, password) {
 
 async function loginUser(username, password) {
   const { data, error } = await db.auth.signInWithPassword({
-    email: username + '@local.habit.app',
+    email: emailFromUsername(username),
     password: password
   });
   if (error) throw error;
