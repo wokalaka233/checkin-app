@@ -2,7 +2,7 @@
 // 代理所有 Supabase API 请求
 // 前端请求 /api/rest/v1/xxx -> Vercel -> Supabase
 
-const SUPABASE_URL = 'https://vqalxycphakttybffwz.supabase.co';
+const SUPABASE_URL = 'https://vqalxycphakttybffhwz.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_xi-u5divr9AoQHLL_G9eaw_4dWotEY9';
 
 export default async function handler(req, res) {
